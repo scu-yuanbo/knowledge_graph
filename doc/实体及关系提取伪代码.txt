@@ -1,0 +1,54 @@
+final long author_id
+line = database.getline() //取某一行数据
+//写入作者实体
+authors_str =  line.getAuthor()
+aithors = authors_str.split("\\;")
+for(author : authors){
+    neo4j_author.write(author_id,author)
+    author_id_cache[i] = author_id
+    author_id ++
+
+}
+//写入论文实体
+paper_csv.write(paper_id,line.getTitle,line.getClass)
+paper_id ++
+
+//写入单位实体
+if(organization_not_exist){ //如果单位在之前的数据中不存在则添加
+    organization_csv.write(organization_id,line.getAuthorOrgan.getOrgan)
+    organization_id ++
+}
+//写入期刊实体
+if(journal_not_exist){ //如果期刊在之前的数据中不存在则添加
+    journal_csv.write(journal_id,line.getJournal)
+    journal_id ++
+}
+//写入关键字实体
+keywords = line.getKeyword()
+for(keyword : keywords){
+    if(keyword_not_exist){
+        keyword_csv.write(keyword_id,keyword)
+        keyword_id_cache[i] = keyword_id
+        keyword_id ++
+    }
+}
+//写入项目基金实体
+if(imburse_not_exist){ //如果期刊在之前的数据中不存在则添加
+    imburse_csv.write(imburse_id,line.getImburse)
+    imburse_id ++
+}
+
+
+/**
+ *  对所有实体建立关系
+ *  并写入文件中
+ **/
+//作者与论文的关系
+for(id : author_id_cache){
+    neo4j_author-paper.write(id,paper)
+}
+//作者与单位的关系
+for(id : author_id_cache){
+    neo4j_author-org(id,org_id)
+}
+
