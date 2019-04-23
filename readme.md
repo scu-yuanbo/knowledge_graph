@@ -1,7 +1,7 @@
 # 知识图谱项目
 为[科搜平台](http://www.kejso.com/)完善知识图谱功能
 
-![](image/pic1.png)
+![](image/img.png)
 
 ## 参与成员
 + [P01son415](https://github.com/P01son6415)
