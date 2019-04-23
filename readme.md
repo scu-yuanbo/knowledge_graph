@@ -1,4 +1,8 @@
 ## 知识图谱项目
+项目成员：
+@P01son6415
+@chunziya
+@scu-yuanbo
 
 为[科搜平台](http://www.kejso.com/)完善知识图谱功能
 
