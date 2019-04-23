@@ -2,7 +2,7 @@
 
 为[科搜平台](http://www.kejso.com/)完善知识图谱功能
 
-![](image/pic1.png)
+![](image/img.png)
 
 ## Resarch
 
