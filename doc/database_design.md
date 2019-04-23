@@ -60,12 +60,14 @@
   | int,11 | longtext |
 
 ### 关系
-1. author - paper  ✅
-2. author - organization  ✅
-3. paper - journal  ✅
-4. paper - year  ✅
-5. paper - imburse  ✅
-6. paper - keyword  ✅
+1. author (write)-> paper
+2. author (belong-to)-> organization  
+3. paper (belong-to)-> journal  
+4. paper (time)-> year
+5. paper (belong-to)-> imburse 
+6. paper (about)-> keyword
 
-
-  
+### TODO
+一些实体之间具有层次与关联关系，例如：  
+组织：「北京大学医学院」和「北京大学计算机学院」属于「北京大学」  
+关键字：「卷积神经网络」和「支持向量机」属于「机器学习」和「人工智能」相关
