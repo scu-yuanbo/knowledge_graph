@@ -1,0 +1,261 @@
+package com.appleyk.service.impl;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Primary;
+import org.springframework.stereotype.Service;
+
+import com.appleyk.process.ModelProcess;
+import com.appleyk.repository.QuestionRepository;
+import com.appleyk.service.QuestionService;
+import com.hankcs.hanlp.dictionary.CustomDictionary;
+
+@Service
+@Primary
+public class QuestionServiceImpl implements QuestionService {
+
+	@Value("${rootDirPath}")
+	private String rootDictPath;
+
+	@Value("${HanLP.CustomDictionary.path.paperDict}")
+	private String paperDictPath;
+
+	@Value("${HanLP.CustomDictionary.path.genreDict}")
+	private String genreDictPath;
+
+	@Value("${HanLP.CustomDictionary.path.yearDict}")
+	private String yearDictPath;
+
+	@Autowired
+	private QuestionRepository questionRepository;
+
+	@Override
+	public void showDictPath() {
+		System.out.println("HanLP分词字典及自定义问题模板根目录：" + rootDictPath);
+		System.out.println("用户自定义扩展词库【论文】：" + paperDictPath);
+	}
+
+	@Override
+	public String answer(String question) throws Exception {
+
+		ModelProcess queryProcess = new ModelProcess(rootDictPath);
+
+		/**
+		 * 加载自定义的论文字典 == 设置词性 nm 0
+		 */
+
+		loadPaperDict(paperDictPath);
+
+		/**
+		 * 加载自定义的类型字典 == 设置词性 ng 0
+		 */
+		loadGenreDict(genreDictPath);
+
+		/**
+		 * 加载自定义的评分字典 == 设置词性 x 0
+		 */
+		loadYearDict(yearDictPath);
+		ArrayList<String> reStrings = queryProcess.analyQuery(question);
+		int modelIndex = Integer.valueOf(reStrings.get(0));
+		String answer = null;
+		String title = "";
+		String name = "";
+		/**
+		 * 匹配问题模板
+		 */
+		switch (modelIndex) {
+			/**新加*/
+			case 0:
+				/**
+				 * nnt 论文文章 == 作者论文文章
+				 */
+				name = reStrings.get(1);
+				List<String> AuthorPapers = questionRepository.getAuthorPapers(name);
+				if (AuthorPapers.size() == 0) {
+					answer = null;
+				} else {
+					answer = AuthorPapers.toString().replace("[", "").replace("]", "");
+				}
+				break;
+
+			case 1:
+				/**
+				 * nnt 作者机构 == 作者属于的机构
+				 */
+				name = reStrings.get(1);
+				List<String> AuthorOrganizations = questionRepository.getAuthorOrganizations(name);
+				if (AuthorOrganizations.size() == 0) {
+					answer = null;
+				} else {
+					answer = AuthorOrganizations.toString().replace("[", "").replace("]", "");
+				}
+				break;
+
+			case 2:
+				/**
+				 * nnt 论文关键词 == 论文的关键词
+				 * title = reStrings.get(1);
+				 * 	String newTitle = ".*" + title + ".*";
+				 * 	title = newTitle;
+				 */
+				title = reStrings.get(1);
+				List<String> PaperKeywords = questionRepository.getPaperKeywords(title);
+				if (PaperKeywords.size() == 0) {
+					answer = null;
+				} else {
+					answer = PaperKeywords.toString().replace("[", "").replace("]", "");
+				}
+
+				break;
+			case 3:
+				/**
+				 * nnt 论文年份== 论文发表的年份
+				 */
+				name = reStrings.get(1);
+				List<String> YearsPaper = questionRepository.getYearsPaper(name);
+				if (YearsPaper.size() == 0) {
+					answer = null;
+				} else {
+					answer = YearsPaper.toString().replace("[", "").replace("]", "");
+				}
+				break;
+
+			case 4:
+				/**
+				 * nm 作者列表 == 论文作者列表
+				 */
+				title = reStrings.get(1);
+				List<String> Authors = questionRepository.getAuthors(title);
+				if (Authors.size() == 0) {
+					answer = null;
+				} else {
+					answer = Authors.toString().replace("[", "").replace("]", "");
+				}
+				break;
+			case 5:
+				/**
+				 * nm  发表年份== 论文的年份
+				 */
+				title = reStrings.get(1);
+				String year = questionRepository.getYear(title);
+				if ( year!= null) {
+					answer = year;
+				} else {
+					answer = null;
+				}
+				break;
+			default:
+				break;
+		}
+
+		System.out.println(answer);
+		if (answer != null && !answer.equals("") && !answer.equals("\\N")) {
+			return answer;
+		} else {
+			return "sorry,我没有找到你要的答案";
+		}
+	}
+
+	/**
+	 * 加载自定义电影字典
+	 *
+	 * @param path
+	 */
+	public void loadPaperDict(String path) {
+
+		File file = new File(path);
+		BufferedReader br = null;
+		try {
+			br = new BufferedReader(new FileReader(file));
+			addCustomDictionary(br, 0);
+		} catch (FileNotFoundException e1) {
+			e1.printStackTrace();
+		}
+
+	}
+
+	/**
+	 * 加载自定义电影类别字典
+	 *
+	 * @param path
+	 */
+	public void loadGenreDict(String path) {
+
+		File file = new File(path);
+		BufferedReader br = null;
+		try {
+			br = new BufferedReader(new FileReader(file));
+			addCustomDictionary(br, 1);
+		} catch (FileNotFoundException e1) {
+			e1.printStackTrace();
+		}
+	}
+
+	/**
+	 * 加载自定义电影评分字典
+	 *
+	 * @param path
+	 */
+	public void loadYearDict(String path) {
+
+		File file = new File(path);
+		BufferedReader br = null;
+		try {
+			br = new BufferedReader(new FileReader(file));
+			addCustomDictionary(br, 2);
+		} catch (FileNotFoundException e1) {
+			e1.printStackTrace();
+		}
+	}
+
+	/**
+	 * 添加自定义分词及其词性，注意数字0表示频率，不能没有
+	 *
+	 * @param br
+	 * @param type
+	 */
+	public void addCustomDictionary(BufferedReader br, int type) {
+
+		String word;
+		try {
+			while ((word = br.readLine()) != null) {
+				switch (type) {
+					/**
+					 * 设置电影名词词性 == nm 0
+					 */
+					case 0:
+						CustomDictionary.add(word, "nm 0");
+						break;
+					/**
+					 * 设置电影类型名词 词性 == ng 0
+					 */
+					case 1:
+						CustomDictionary.add(word, "ng 0");
+						break;
+					/**
+					 * 设置电影评分数词 词性 == x 0
+					 */
+					case 2:
+						CustomDictionary.add(word, "x 0");
+						break;
+					default:
+						break;
+				}
+			}
+			br.close();
+		} catch (NumberFormatException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+}
