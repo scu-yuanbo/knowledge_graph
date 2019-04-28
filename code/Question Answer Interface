@@ -1,0 +1,83 @@
+package com.appleyk.repository;
+
+import java.util.List;
+
+import org.springframework.data.neo4j.annotation.Query;
+import org.springframework.data.neo4j.repository.GraphRepository;
+import org.springframework.data.repository.query.Param;
+
+
+/**
+ * 基于科搜知识图谱的自问自答的查询接口
+ */
+public interface QuestionRepository extends GraphRepository<Long> {
+	/**
+	 * 0 对应问题模板0 == nnt(作者) 论文
+	 *
+	 * @param name
+	 *            作者名
+	 * @return 返回作者写过的所有文章的类型集合【不重复的】
+	 */
+	@Query("match(n:czc_Author)-[:WRITE]->(m:czc_Paper) where n.author_name ={name} "
+			+ "return m.paper_name")
+	List<String> getAuthorPapers(@Param("name") String name);
+
+	/**
+	 * 1 对应问题模板1 == nnt(作者) 机构
+	 *
+	 * @param name
+	 *            作者名
+	 * @return 返回作者写过的所有文章的类型集合【不重复的】
+	 */
+	@Query("match(n:czc_Author)-[:BELONG]->(m:czc_Organ) where n.author_name ={name} "
+			+ "return m.org_name")
+	List<String> getAuthorOrganizations(@Param("name") String name);
+
+	/**
+	 * 2 对应问题模板2 == nnt(论文) 关键词
+	 *
+	 * @param title
+	 *            作者名
+	 * @return 返回作者写过的所有文章的类型集合【不重复的】
+	 *
+	 * @Query("match(n:czc_Paper)-[:INVOLVED]->(m:czc_Keyword) where n.paper_name =~{title} "
+	 * 			+ "return m.keyword_name")
+	 */
+
+	@Query("match(n:czc_Paper)-[:INVOLVED]->(m:czc_Keyword) where n.paper_name ={title} "
+			+ "return m.keyword_name")
+	List<String> getPaperKeywords(@Param("title") String title);
+
+	/**
+	 * 3 对应问题模板3 == nm(年份) 论文
+	 *
+	 * @param name
+	 *            作者名
+	 * @return 返回作者写过的所有文章的类型集合【不重复的】
+	 */
+	@Query("match(n:czc_Paper)-[:TIME]-(m:czc_Year) where m.year ={name} "
+			+ "return n.paper_name")
+	List<String> getYearsPaper(@Param("name") String name);
+
+	/**
+	 * 4 对应问题模板4 == nnt(论文) 作者列表
+	 *
+	 * @param title
+	 *            作者名
+	 * @return 返回作者写过的所有文章的类型集合【不重复的】
+	 */
+	@Query("match(n:czc_Author)-[:WRITE]-(m:czc_Paper) where m.paper_name ={title} return n.author_name")
+	List<String> getAuthors(@Param("title") String title);
+
+	/**
+	 * 5 对应问题模板5 == nm(论文)  发表时间
+	 *
+	 * @param title
+	 *            作者名
+	 * @return 返回作者写过的所有文章的类型集合【不重复的】
+	 */
+	@Query("match(n:czc_Paper)-[:TIME]-(m:czc_Year) where n.paper_name ={title} return m.year")
+	String getYear(@Param("title") String title);
+
+
+}
